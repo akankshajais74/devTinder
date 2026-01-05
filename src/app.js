@@ -3,16 +3,6 @@ const connectDb = require("./config/database");
 const User = require("./model/user");
 const app = express();
 
-// app.use(function (req, res) {
-//   res.send("hello from server");
-// });
-// app.use("/test", (req, res) => {
-//   res.send("hello from server");
-// });
-// another way to call the route with get
-// mongo connection
-
-// test route
 connectDb()
   .then(() => {
     console.log("connection to db is successful");
@@ -23,25 +13,46 @@ connectDb()
   .catch((err) => {
     console.log(err);
   });
-// app.get("/", (req, res) => {
-//   res.send("Server is running");
-// });
-app.get("/test", (req, res) => {
-  res.send("ok google");
-});
+
 //now we will create a post to save data in db
+app.use(express.json()); // this will be applicable to all route
 app.post("/signup", async (req, res) => {
-  const user = {
-    firstName: "test1",
-    lastName: "jais",
-    age: 23,
-  };
-  //i am creating a new user with this data or creating new instance of User model
-  const newUser = new User(user);
+  const newUser = new User(req.body);
   try {
     await newUser.save(); // this will return a promise
     res.send("user added successfully");
   } catch (e) {
     res.status(400).send("user not added", e.message);
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  const userFirstName = req.body.firstName1;
+  const Allusers = await User.find({ firstName: userFirstName }); // if we pass blank obj then it will give all the data
+  try {
+    res.send(Allusers);
+  } catch (err) {
+    res.status(404).send("User not found");
+  }
+});
+
+app.delete("/deleteUser", async (req, res) => {
+  const userId = req.body.id;
+  try {
+    const user = await User.findByIdAndDelete({ _id: userId });
+    res.send("user deleted successfully");
+  } catch (err) {
+    res.status(404).send("User not found");
+  }
+});
+
+app.patch("/updateUser", async (req, res) => {
+  const userId = req.body.id; //in req body id should be the name
+  const data = req.body;
+  try {
+    const user = await User.findByIdAndUpdate({ _id: userId }, data);
+    res.send("user updated successfully");
+  } catch (err) {
+    res.status(400).send("something went wrong");
   }
 });
